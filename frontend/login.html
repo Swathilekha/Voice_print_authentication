@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Voice Authentication</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4caf50;
+      --primary-dark: #2e7d32;
+      --primary-light: #81c784;
+      --accent: #00bcd4;
+      --text: #333;
+      --text-light: #666;
+      --bg: #f5f5f5;
+      --card-bg: rgba(255, 255, 255, 0.85);
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      --radius: 20px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
+      color: var(--text);
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      padding: 40px;
+      width: 480px;
+      max-width: 95%;
+      box-shadow: var(--shadow);
+      text-align: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 5px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+    }
+
+    .container:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .logo {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      color: var(--primary-dark);
+    }
+
+    h2 {
+      color: var(--primary-dark);
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      color: var(--text-light);
+      margin-bottom: 25px;
+      font-size: 16px;
+    }
+
+    .input-group {
+      position: relative;
+      margin: 25px 0;
+    }
+
+    input {
+      width: 100%;
+      padding: 15px 20px;
+      font-size: 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      outline: none;
+      transition: all 0.3s;
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+    }
+
+    .btn {
+      margin-top: 15px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #6c757d, #495057);
+      box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+    }
+
+    .btn-secondary:hover {
+      box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+    }
+
+    .btn-accent {
+      background: linear-gradient(135deg, var(--accent), #008ba3);
+      box-shadow: 0 4px 15px rgba(0, 188, 212, 0.3);
+    }
+
+    .btn-accent:hover {
+      box-shadow: 0 6px 20px rgba(0, 188, 212, 0.4);
+    }
+
+    #challenge {
+      margin-top: 25px;
+      padding: 25px;
+      border-radius: 12px;
+      background: rgba(76, 175, 80, 0.05);
+      border: 1px solid rgba(76, 175, 80, 0.1);
+    }
+
+    p {
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    #status {
+      display: block;
+      margin-top: 15px;
+      font-weight: 500;
+      font-size: 14px;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .success { 
+      background: rgba(46, 125, 50, 0.1);
+      color: var(--primary-dark);
+      border: 1px solid rgba(46, 125, 50, 0.2);
+    }
+    
+    .error { 
+      background: rgba(198, 40, 40, 0.1);
+      color: #c62828;
+      border: 1px solid rgba(198, 40, 40, 0.2);
+    }
+
+    /* === Circular Graph === */
+    .graph {
+      margin: 20px auto;
+      width: 140px;
+      height: 140px;
+      position: relative;
+    }
+    
+    .graph svg { 
+      transform: rotate(-90deg); 
+      width: 140px; 
+      height: 140px; 
+    }
+    
+    .graph circle {
+      fill: none;
+      stroke-width: 12;
+      stroke-linecap: round;
+    }
+    
+    .graph .bg { 
+      stroke: rgba(0, 0, 0, 0.1); 
+    }
+    
+    .graph .progress {
+      stroke: url(#grad);
+      stroke-dasharray: 377;
+      stroke-dashoffset: 377;
+      transition: stroke-dashoffset 1s ease;
+    }
+    
+    .graph-text {
+      position: absolute;
+      top: 50%; 
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--primary-dark);
+    }
+
+    /* === Confidence Bar === */
+    .bar-container {
+      width: 80%;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 20px auto;
+      height: 20px;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      border-radius: 10px;
+      transition: width 1.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .bar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+
+    /* === Mini Chart === */
+    .mini-chart {
+      margin-top: 25px;
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      height: 120px;
+      padding: 0 10px;
+    }
+    
+    .bar-item {
+      width: 50px;
+      background: linear-gradient(to top, var(--primary), var(--primary-light));
+      border-radius: 8px 8px 0 0;
+      transition: height 1s ease;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      color: white;
+      font-weight: bold;
+      box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .bar-item::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.2), transparent);
+    }
+    
+    .bar-label {
+      font-size: 12px;
+      margin-top: 8px;
+      color: var(--text-light);
+      font-weight: 500;
+    }
+
+    /* Behavioral Analysis */
+    .behavioral-box {
+      margin-top: 25px;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .behavioral-box h3 {
+      color: var(--primary-dark);
+      font-size: 18px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .behavioral-list {
+      list-style: none;
+      padding-left: 0;
+    }
+    
+    .behavioral-list li {
+      padding: 8px 0;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .behavioral-list li:last-child {
+      border-bottom: none;
+    }
+    
+    .behavioral-list strong {
+      color: var(--text);
+    }
+    
+    .behavioral-list span {
+      color: var(--text-light);
+      font-weight: 500;
+    }
+
+    /* Register Form */
+    #registerForm {
+      display: none;
+      text-align: left;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+    }
+
+    .form-actions .btn {
+      margin-top: 0;
+      width: auto;
+      flex: 1;
+    }
+
+    /* Animation for elements appearing */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in {
+      animation: fadeInUp 0.5s ease forwards;
+    }
+
+    /* Recording animation */
+    .pulse {
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+      }
+    }
+
+    /* Toggle between login and register */
+    .toggle-container {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .toggle-text {
+      color: var(--text-light);
+      margin-bottom: 10px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 480px) {
+      .container {
+        padding: 25px;
+      }
+      
+      .mini-chart {
+        height: 100px;
+      }
+      
+      .bar-item {
+        width: 40px;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <i class="fas fa-microphone-alt"></i>
+    </div>
+    <h2>Voice Authentication</h2>
+    <p class="subtitle">Secure access using your unique voiceprint</p>
+    
+    <!-- Login Form -->
+    <div id="loginForm">
+      <div class="input-group">
+        <input id="user" placeholder="Enter User ID (e.g. U001)">
+      </div>
+      
+      <button id="getQ" class="btn">
+        <i class="fas fa-microphone"></i> Get Challenge
+      </button>
+      
+      <div id="challenge"></div>
+
+      <!-- Confidence Graph -->
+      <div class="graph" id="confidenceGraph" style="display:none;">
+        <svg>
+          <defs>
+            <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#4caf50"/>
+              <stop offset="100%" stop-color="#81c784"/>
+            </linearGradient>
+          </defs>
+          <circle class="bg" cx="70" cy="70" r="60"></circle>
+          <circle class="progress" cx="70" cy="70" r="60"></circle>
+        </svg>
+        <div class="graph-text" id="graphText">0%</div>
+      </div>
+
+      <!-- Confidence Bar -->
+      <div class="bar-container" id="barBox" style="display:none;">
+        <div class="bar" id="confidenceBar"></div>
+      </div>
+
+      <!-- Mini Chart -->
+      <div class="mini-chart" id="miniChart" style="display:none;">
+        <div>
+          <div class="bar-item" id="bar1" style="height:10%;">0</div>
+          <div class="bar-label">Genuine</div>
+        </div>
+        <div>
+          <div class="bar-item" id="bar2" style="height:10%;">0</div>
+          <div class="bar-label">Impostor</div>
+        </div>
+        <div>
+          <div class="bar-item" id="bar3" style="height:10%;">0</div>
+          <div class="bar-label">Threshold</div>
+        </div>
+      </div>
+
+      <!-- Behavioral Analysis -->
+      <div class="behavioral-box" id="behavioralBox" style="display:none;">
+        <h3><i class="fas fa-brain"></i> Behavioral Analysis</h3>
+        <ul class="behavioral-list" id="behavioralList">
+          <li><strong>Speech Pace:</strong> <span id="pace">--</span></li>
+          <li><strong>Pitch Variation:</strong> <span id="pitch">--</span></li>
+          <li><strong>Energy Consistency:</strong> <span id="energy">--</span></li>
+          <li><strong>Pauses Detected:</strong> <span id="pauses">--</span></li>
+          <li><strong>Behavioral Confidence:</strong> <span id="behConf">--%</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Register Form -->
+    <div id="registerForm">
+      <div class="form-group">
+        <label for="regUser">User ID</label>
+        <input type="text" id="regUser" placeholder="Choose a User ID (e.g. U001)">
+      </div>
+      
+      <div class="form-group">
+        <label for="regName">Full Name</label>
+        <input type="text" id="regName" placeholder="Enter your full name">
+      </div>
+      
+      <div class="form-group">
+        <label for="regEmail">Email Address</label>
+        <input type="email" id="regEmail" placeholder="Enter your email">
+      </div>
+      
+      <div class="form-group">
+        <label>Voice Enrollment</label>
+        <p style="font-size: 14px; color: var(--text-light); margin-top: 5px;">
+          You'll be asked to record a voice sample after registration
+        </p>
+      </div>
+      
+      <div class="form-actions">
+        <button id="registerBtn" class="btn btn-accent">
+          <i class="fas fa-user-plus"></i> Register
+        </button>
+        <button id="backToLogin" class="btn btn-secondary">
+          <i class="fas fa-arrow-left"></i> Back
+        </button>
+      </div>
+    </div>
+
+    <!-- Toggle between Login and Register -->
+    <div class="toggle-container">
+      <p class="toggle-text" id="toggleText">Don't have an account?</p>
+      <button id="toggleForm" class="btn btn-secondary">
+        <i class="fas fa-user-plus"></i> Create Account
+      </button>
+    </div>
+  </div>
+
+  <script>
+  // Toggle between Login and Register forms
+  document.getElementById("toggleForm").onclick = function() {
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+    const toggleText = document.getElementById("toggleText");
+    const toggleBtn = document.getElementById("toggleForm");
+    
+    if (loginForm.style.display !== "none") {
+      // Switch to Register
+      loginForm.style.display = "none";
+      registerForm.style.display = "block";
+      toggleText.textContent = "Already have an account?";
+      toggleBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Back to Login';
+    } else {
+      // Switch to Login
+      registerForm.style.display = "none";
+      loginForm.style.display = "block";
+      toggleText.textContent = "Don't have an account?";
+      toggleBtn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+    }
+  };
+
+  // Back to Login button in Register form
+  document.getElementById("backToLogin").onclick = function() {
+    document.getElementById("registerForm").style.display = "none";
+    document.getElementById("loginForm").style.display = "block";
+    document.getElementById("toggleText").textContent = "Don't have an account?";
+    document.getElementById("toggleForm").innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+  };
+
+  // Register button handler
+  document.getElementById("registerBtn").onclick = async function() {
+    const user_id = document.getElementById("regUser").value.trim();
+    const name = document.getElementById("regName").value.trim();
+    const email = document.getElementById("regEmail").value.trim();
+    
+    if (!user_id || !name || !email) {
+      alert("Please fill in all fields!");
+      return;
+    }
+    
+    // Add loading state to button
+    const btn = document.getElementById("registerBtn");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
+    btn.disabled = true;
+    
+    try {
+      // Simulate API call for registration
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Show success message
+      alert(`Registration successful! User ${user_id} has been created.`);
+      
+      // Switch back to login form
+      document.getElementById("registerForm").style.display = "none";
+      document.getElementById("loginForm").style.display = "block";
+      document.getElementById("toggleText").textContent = "Don't have an account?";
+      document.getElementById("toggleForm").innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+      
+      // Pre-fill the login form with the new user ID
+      document.getElementById("user").value = user_id;
+      
+      // Clear registration form
+      document.getElementById("regUser").value = "";
+      document.getElementById("regName").value = "";
+      document.getElementById("regEmail").value = "";
+    } catch (error) {
+      alert("Registration failed. Please try again.");
+    } finally {
+      // Restore button state
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  };
+
+  // Original login functionality
+  document.getElementById("getQ").onclick = async ()=>{
+    const user_id = document.getElementById("user").value.trim();
+    if (!user_id) {
+      alert("Please enter a User ID!");
+      return;
+    }
+    
+    // Add loading state to button
+    const btn = document.getElementById("getQ");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+    btn.disabled = true;
+    
+    try {
+      const res = await fetch("/login/start", {
+        method:"POST", 
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({user_id})
+      });
+      const data = await res.json();
+      
+      document.getElementById("challenge").innerHTML = `
+        <p><strong>Challenge:</strong> ${data.question}</p>
+        <button id="rec" class="btn pulse">
+          <i class="fas fa-microphone"></i> Record Answer
+        </button>
+        <span id="status"></span>
+      `;
+      
+      document.getElementById("rec").onclick = ()=> startRecording(user_id);
+    } catch (error) {
+      alert("Error: Could not connect to server");
+    } finally {
+      // Restore button state
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  };
+
+  let mediaRecorder, chunks;
+  async function startRecording(user_id){
+    const status = document.getElementById("status");
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      mediaRecorder = new MediaRecorder(stream);
+      chunks = [];
+      
+      // Update UI for recording state
+      const recBtn = document.getElementById("rec");
+      recBtn.innerHTML = '<i class="fas fa-circle"></i> Recording...';
+      recBtn.classList.add("pulse");
+      status.textContent = "🎧 Speak now!";
+      status.className = "";
+
+      mediaRecorder.ondataavailable = e => chunks.push(e.data);
+      mediaRecorder.onstop = async () => {
+        recBtn.innerHTML = '<i class="fas fa-microphone"></i> Record Answer';
+        recBtn.classList.remove("pulse");
+        status.textContent = "Uploading...";
+        
+        const blob = new Blob(chunks, {type:'audio/webm'});
+        const fd = new FormData();
+        fd.append("user_id", user_id);
+        fd.append("audio", blob, "live.webm");
+        
+        try {
+          const res = await fetch("/login/verify", {method:"POST", body:fd});
+          const r = await res.json();
+
+          // Update status
+          if (r.verified) {
+            status.textContent = "✅ Verified: Access Granted!";
+            status.className = "success";
+          } else {
+            status.textContent = "❌ Verification Failed!";
+            status.className = "error";
+          }
+
+          const score = Math.round((r.final_score || 0) * 100);
+          updateVisuals(score);
+        } catch (error) {
+          status.textContent = "❌ Upload failed!";
+          status.className = "error";
+        }
+      };
+
+      mediaRecorder.start();
+      setTimeout(() => {
+        if (mediaRecorder.state === "recording") {
+          mediaRecorder.stop();
+          // Stop all tracks
+          stream.getTracks().forEach(track => track.stop());
+        }
+      }, 4000);
+    } catch (error) {
+      status.textContent = "❌ Could not access microphone!";
+      status.className = "error";
+    }
+  }
+
+  function updateVisuals(score){
+    // Circular graph
+    const graph = document.getElementById("confidenceGraph");
+    const progress = document.querySelector(".progress");
+    const graphText = document.getElementById("graphText");
+    graph.style.display = "block";
+    graph.classList.add("fade-in");
+    const offset = 377 - (377 * score) / 100;
+    progress.style.strokeDashoffset = offset;
+    graphText.textContent = score + "%";
+
+    // Confidence bar
+    const barBox = document.getElementById("barBox");
+    const bar = document.getElementById("confidenceBar");
+    barBox.style.display = "block";
+    barBox.classList.add("fade-in");
+    bar.style.width = score + "%";
+
+    // Mini chart (simulate metrics)
+    const miniChart = document.getElementById("miniChart");
+    miniChart.style.display = "flex";
+    miniChart.classList.add("fade-in");
+    document.getElementById("bar1").style.height = score + "%";
+    document.getElementById("bar1").textContent = score;
+    document.getElementById("bar2").style.height = (100 - score * 0.6) + "%";
+    document.getElementById("bar2").textContent = Math.round(100 - score * 0.6);
+    document.getElementById("bar3").style.height = "50%";
+    document.getElementById("bar3").textContent = "50";
+    
+    showBehavioralInsights(score);
+  }
+  
+  function showBehavioralInsights(score) {
+    const box = document.getElementById("behavioralBox");
+    box.style.display = "block";
+    box.classList.add("fade-in");
+
+    // Simulate behavioral parameters
+    const pace = (80 + Math.random() * 40).toFixed(1); // words/min
+    const pitchVar = ["Stable", "Moderate", "High"][Math.floor(Math.random() * 3)];
+    const energy = ["Consistent", "Variable", "Low"][Math.floor(Math.random() * 3)];
+    const pauses = Math.floor(Math.random() * 4);
+    const behConf = Math.min(100, Math.round(score - Math.random() * 15 + 10));
+
+    // Update UI
+    document.getElementById("pace").textContent = `${pace} wpm`;
+    document.getElementById("pitch").textContent = pitchVar;
+    document.getElementById("energy").textContent = energy;
+    document.getElementById("pauses").textContent = pauses;
+    document.getElementById("behConf").textContent = behConf + "%";
+
+    // Visual feedback color logic
+    const behConfElement = document.getElementById("behConf");
+    if (behConf > 75) {
+      behConfElement.style.color = "#2e7d32";
+    } else if (behConf > 50) {
+      behConfElement.style.color = "#f9a825";
+    } else {
+      behConfElement.style.color = "#c62828";
+    }
+  }
+  </script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Register</title></head>
+<body>
+  <h2>Register (10 questions)</h2>
+  <input id="name" placeholder="Your name"><button id="startReg">Start</button>
+  <div id="qbox"></div>
+  <script>
+  let questions = [], user_id = null, current = 0;
+  document.getElementById("startReg").onclick = async () => {
+    const name = document.getElementById("name").value || "NoName";
+    const res = await fetch("/register/start", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({name})
+    });
+    const data = await res.json();
+    user_id = data.user_id; questions = data.questions;
+    document.getElementById("qbox").innerHTML = `<p>Assigned ID: ${user_id}</p>`;
+    showQuestion();
+  };
+
+  async function showQuestion(){
+    if(current >= questions.length){
+      document.getElementById("qbox").innerHTML += `<p>All recorded. Finalizing...</p>`;
+      await fetch("/register/finalize", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({user_id})
+      });
+      document.getElementById("qbox").innerHTML += `<p>Registration complete.</p>`;
+      return;
+    }
+    const q = questions[current];
+    document.getElementById("qbox").innerHTML = `<p>Q${current+1}: ${q}</p>
+      <button id="rec">Record Answer</button> <span id="status"></span>`;
+    const recBtn = document.getElementById("rec");
+    recBtn.onclick = () => startRecording();
+  }
+
+  let mediaRecorder, chunks;
+  async function startRecording(){
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRecorder = new MediaRecorder(stream);
+    chunks = [];
+    mediaRecorder.ondataavailable = e=>chunks.push(e.data);
+    mediaRecorder.onstop = async ()=>{
+      const blob = new Blob(chunks, {type:'audio/webm'});
+      const fd = new FormData();
+      fd.append("user_id", user_id);
+      fd.append("q_index", current+1);
+      fd.append("audio", blob, `q${current+1}.webm`);
+      document.getElementById("status").innerText = "Uploading...";
+      await fetch("/register/submit", {method:"POST", body:fd});
+      document.getElementById("status").innerText = "Saved.";
+      current++;
+      showQuestion();
+    };
+    mediaRecorder.start();
+    setTimeout(()=>mediaRecorder.stop(), 5000); // 5 sec recording per question
+  }
+  </script>
+</body>
+</html>
