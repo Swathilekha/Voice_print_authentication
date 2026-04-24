@@ -1,0 +1,12 @@
+torch
+torchaudio
+speechbrain
+librosa
+soundfile
+sounddevice
+flask
+flask-cors
+numpy
+scikit-learn
+joblib
+praat-parselmouth
